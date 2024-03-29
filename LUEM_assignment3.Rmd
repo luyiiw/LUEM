@@ -64,7 +64,20 @@ plotTheme <- theme(
 ```
 
 
-```{r}
+```{r load data}
+# dependent variable
+inundation <- read.csv("https://raw.githubusercontent.com/luyiiw/LUEM/main/calgary_table/zonal_depe.csv")
+
+# independent variables
+elevation <- read.csv("https://raw.githubusercontent.com/luyiiw/LUEM/main/calgary_table/zonal_elev.csv")
+
+flow_acc <- read.csv("https://raw.githubusercontent.com/luyiiw/LUEM/main/calgary_table/zonal_fac.csv")
+
+land_use <- read.csv("https://raw.githubusercontent.com/luyiiw/LUEM/main/calgary_table/zonal_lulc.csv")
+
+slope <- read.csv("https://raw.githubusercontent.com/luyiiw/LUEM/main/calgary_table/zonal_slope.csv")
+
+water_body <- read.csv("https://raw.githubusercontent.com/luyiiw/LUEM/main/calgary_table/zonal_water.csv")
 
 ```
 

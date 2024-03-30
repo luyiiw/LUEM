@@ -222,11 +222,8 @@ classProbs <- predict(floodModel, floodTest, type="response")
 
 hist(classProbs)
 
-testProbs <- data.frame(obs = as.numeric(floodTest$flood),
+testProbs <- data.frame(obs = as.factor(floodTest$flood),
                         pred = classProbs)
-
-floodTest$flood <- as.factor(floodTest$flood)
-levels(floodTest$flood) <- c(0, 1)
 
 ggplot(testProbs, aes(x = pred, fill=as.factor(obs))) + 
   geom_density() +

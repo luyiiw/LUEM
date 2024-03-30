@@ -82,8 +82,66 @@ water_body <- read.csv("https://raw.githubusercontent.com/luyiiw/LUEM/main/calga
 ```
 
 
-
+Exploratory Analysis
 ```{r}
+# Creating tables to combine exploratory data
+flood <- inundation %>%
+  select(OBJECTID, RANGE) %>%
+  rename(flood = RANGE)
 
+# 1 = flood, 0 = no flood ?
+
+#1 Elevation
+elev_comb <- elevation %>%
+  select(OBJECTID, MEAN) %>%
+  rename(mean_elev= MEAN)
+
+#2 Slope
+slope_comb <- slope %>%
+  select(OBJECTID, MAX) %>%
+  rename(max_slope= MAX)
+
+#3 Water body
+water_comb <- water_body %>%
+  select(OBJECTID, MIN) %>%
+  rename(min_dist_water= MIN)
+
+#4 Flow accumulation
+fac_comb <-  flow_acc %>%
+  select(OBJECTID, MAX) %>%
+  rename(max_fac= MAX)
+
+#5 Land Use
+# We need to discuss this variable again, i think how we categorized it was wrong
+
+
+# Combining the tables (think of another way to do this)
+flood_comb <- cbind(flood, elev_comb, slope_comb, water_comb, fac_comb) 
+
+flood_comb2 <- cbind(flood, elev_comb [, -1], slope_comb [, -1], water_comb [, -1], fac_comb [, -1]) %>%
+  rename(mean_elev = elev_comb [, -1])
+
+floodPlotVariables <- 
+  flood_comb %>%
+  as.data.frame() %>%
+  select(flood, mean_elev, max_slope, min_dist_water, max_fac) %>%
+  gather(variable, value, -flood)
 ```
 
+```{r plot_variables}
+
+# need to check the labels for flood and not flood 
+
+ggplot(floodPlotVariables %>%
+         group_by(flood, variable) %>%
+         summarize(mean = mean(value))) + 
+     geom_bar(aes(as.factor(flood), 
+                  mean, 
+                  fill=as.factor(flood)),
+              stat="identity") + 
+     facet_wrap(~variable) +
+     scale_fill_manual(values = c("dark blue", "dark green"),
+                      labels = c("Not Flood","Flood"),
+                      name = "") +
+    labs(x="Flood", y="Value")
+```

@@ -246,12 +246,34 @@ caret::confusionMatrix(reference = as.factor(testProbs$obs),
                        positive = "1")
 ```
 
+Predicted = 0, Observed = 0 —> True Negative (No flood correctly predicted 128)
+
+Predicted = 1, Observed = 1 —> True Positive (Floods correctly predicted 42)
+
+Predicted = 1, Observed = 0 —> False Positive (Incorrectly predicted flood when there was no flood 13)
+
+Predicted = 0, Observed = 1 —> False Negative (Incorrectly predicted no flood when there was a flood 20)
+
+
 ## ROC Curve
 ```{r}
+
+# why is plot not showing up?
 ggplot(testProbs, aes(d = obs, m = pred)) + 
-  geom_roc(n.cuts = 50, labels = FALSE) + 
+  geom_roc(n.cuts = 10, labels = FALSE) + 
   style_roc(theme = theme_grey) +
   geom_abline(slope = 1, intercept = 0, size = 1.5, color = 'grey') 
+
+
+# Assuming classProbs contains the predicted probabilities for the positive class
+roc_curve <- roc(testProbs$obs, testProbs$pred)
+
+# Plot ROC curve using ggplot2
+ggplot(data = roc_curve, aes(x = 1 - specificity, y = sensitivity)) +
+  geom_line() +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
+  labs(x = "False Positive Rate", y = "True Positive Rate", title = "ROC Curve")
+
 
 #area under the curve
 auc(testProbs$obs, testProbs$pred)

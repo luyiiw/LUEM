@@ -198,8 +198,8 @@ trainIndex <- createDataPartition(model_data$flood, p = .70,
                                   list = FALSE,
                                   times = 1)
 
-floodTrain <- flood[ trainIndex,]
-floodTest  <- flood[-trainIndex,]
+floodTrain <- model_data[ trainIndex,]
+floodTest  <- model_data[-trainIndex,]
 
 ## work on this to correct the data set output
 ```
@@ -214,5 +214,35 @@ floodModel <- glm(flood ~ .,
 summary(floodModel)
 ```
 
+## Model validation
+```{r}
+## check from this point, something wrong, observation out put is 1 and 2 instead of 0 and 1
+classProbs <- predict(floodModel, floodTest, type="response")
+
+hist(classProbs)
+
+testProbs <- data.frame(obs = as.numeric(floodTest$flood),
+                        pred = classProbs)
+
+ggplot(testProbs, aes(x = pred, fill=as.factor(obs))) + 
+  geom_density() +
+  facet_grid(obs ~ .) + 
+  xlab("Probability") +
+  ylab("Frequency")+
+  geom_vline(xintercept = .5) +
+  scale_fill_manual(values = c("dark blue", "dark green"),
+                      labels = c("Not Flood","Flood"),
+                      name = "")+
+  plotTheme
+```
+
+## Confusion Matrix
+```{r}
+testProbs$predClass  = ifelse(testProbs$pred > .5 ,1,0)
+
+caret::confusionMatrix(reference = as.factor(testProbs$obs), 
+                       data = as.factor(testProbs$predClass), 
+                       positive = "1")
+```
 
 

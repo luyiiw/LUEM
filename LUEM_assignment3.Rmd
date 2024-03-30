@@ -25,6 +25,7 @@ library(knitr)
 library(kableExtra)
 library(tigris)
 library(viridis)
+library(ggplot2)
 ```
 
 ```{r themes}
@@ -82,7 +83,7 @@ water_body <- read.csv("https://raw.githubusercontent.com/luyiiw/LUEM/main/calga
 ```
 
 
-Exploratory Analysis
+# Exploratory Analysis
 ```{r}
 # Creating tables to combine exploratory data
 flood <- inundation %>%
@@ -120,27 +121,33 @@ lu_comb <- land_use %>%
   select(OBJECTID, MAX)%>%
   rename(land_use = MAX) %>%
   mutate(land_use = factor(land_use))
-
 # Urban = 1 , non-urban = 0
+```
+
+```{r}
+# Combining the tables (think of another way to do this) consider merge?
+flood_comb <- flood %>%
+  inner_join(elev_comb, by = "OBJECTID") %>%
+  inner_join(slope_comb, by = "OBJECTID") %>%
+  inner_join(water_comb, by = "OBJECTID") %>%
+  inner_join(fac_comb, by = "OBJECTID")
 
 
-# Combining the tables (think of another way to do this)
-flood_comb <- cbind(flood, elev_comb, slope_comb, water_comb, fac_comb) 
+# flood_comb <- cbind(flood, elev_comb, slope_comb, water_comb, fac_comb) 
 
-flood_comb2 <- cbind(flood, elev_comb [, -1], slope_comb [, -1], water_comb [, -1], fac_comb [, -1]) %>%
-  rename(mean_elev = elev_comb [, -1])
+#flood_comb2 <- cbind(flood, elev_comb [, -1], slope_comb [, -1], water_comb [, -1], fac_comb [, -1]) %>%
+ # rename(mean_elev = elev_comb [, -1])
 
 floodPlotVariables <- 
   flood_comb %>%
   as.data.frame() %>%
-  select(flood, mean_elev, max_slope, min_dist_water, max_fac) %>%
+  select(flood, mean_elev, max_slope, min_dist_water, mean_fac) %>%
   gather(variable, value, -flood)
+
 ```
 
 ```{r plot_variables}
-
 # need to check the labels for flood and not flood 
-
 ggplot(floodPlotVariables %>%
          group_by(flood, variable) %>%
          summarize(mean = mean(value))) + 
@@ -148,19 +155,64 @@ ggplot(floodPlotVariables %>%
                   mean, 
                   fill=as.factor(flood)),
               stat="identity") + 
-     facet_wrap(~variable) +
-     scale_fill_manual(values = c("dark blue", "dark green"),
-                      labels = c("Not Flood","Flood"),
+     facet_wrap(~variable, scales = "free_y") +
+     scale_fill_manual(values = c("dark green", "dark blue"),
+                      labels = c("No Flood","Flood"),
                       name = "") +
-    labs(x="Flood", y="Value")
+    labs(x="Flood", y="Value") 
 
 
-# plot by count 
-ggplot()
+# Plotting dummy variables
+# Assuming flood and land_use are already created as factor variables
+dummy_comb <- merge(flood, lu_comb, by = "OBJECTID", all = TRUE)
+
+# Plot the bar graph
+ggplot(dummy_comb, aes(x = flood, fill = land_use)) +
+  geom_bar(position = "dodge") +
+  labs(x = "Flood", y = "Count", fill = "Land Use") +
+  scale_fill_manual(values = c("dark green", "dark blue"), 
+                    labels = c("Non-Urban", "Urban")) 
+#change the colors 
+#graph shows that urban areas flood more
 
 ```
 
 
+## Model Building 
+### Partition training and test sets
+```{r}
+# Combine all data sets for model building
+model_data <- flood %>%
+  inner_join(elev_comb, by = "OBJECTID") %>%
+  inner_join(slope_comb, by = "OBJECTID") %>%
+  inner_join(water_comb, by = "OBJECTID") %>%
+  inner_join(fac_comb, by = "OBJECTID") %>%
+  mutate(flood = as.factor(flood))
+
+#took out land cover
+
+
+# Creating training and test sets
+set.seed(3456)
+trainIndex <- createDataPartition(model_data$flood, p = .70,
+                                  list = FALSE,
+                                  times = 1)
+
+floodTrain <- flood[ trainIndex,]
+floodTest  <- flood[-trainIndex,]
+
+## work on this to correct the data set output
+```
+
+
+## Making the binomial model
+```{r}
+floodModel <- glm(flood ~ ., 
+                    family="binomial"(link="logit"), data = floodTrain %>%
+                                                            as.data.frame() %>%
+                                                            select(-OBJECTID))
+summary(floodModel)
+```
 
 
 

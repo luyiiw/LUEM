@@ -87,9 +87,10 @@ Exploratory Analysis
 # Creating tables to combine exploratory data
 flood <- inundation %>%
   select(OBJECTID, RANGE) %>%
-  rename(flood = RANGE)
+  rename(flood = RANGE) %>%
+  mutate(flood = factor(flood))
 
-# 1 = flood, 0 = no flood ?
+# 1 = flood, 0 = no flood
 
 #1 Elevation
 elev_comb <- elevation %>%
@@ -100,6 +101,7 @@ elev_comb <- elevation %>%
 slope_comb <- slope %>%
   select(OBJECTID, MAX) %>%
   rename(max_slope= MAX)
+# maybe consider mean for model
 
 #3 Water body
 water_comb <- water_body %>%
@@ -108,11 +110,18 @@ water_comb <- water_body %>%
 
 #4 Flow accumulation
 fac_comb <-  flow_acc %>%
-  select(OBJECTID, MAX) %>%
-  rename(max_fac= MAX)
+  select(OBJECTID, MEAN) %>%
+  rename(mean_fac= MEAN)
+#changed from max to mean
 
-#5 Land Use
-# We need to discuss this variable again, i think how we categorized it was wrong
+#5 Land Use/Permeability
+# Use max, it's dummy var, as.factor
+lu_comb <- land_use %>%
+  select(OBJECTID, MAX)%>%
+  rename(land_use = MAX) %>%
+  mutate(land_use = factor(land_use))
+
+# Urban = 1 , non-urban = 0
 
 
 # Combining the tables (think of another way to do this)
@@ -144,4 +153,14 @@ ggplot(floodPlotVariables %>%
                       labels = c("Not Flood","Flood"),
                       name = "") +
     labs(x="Flood", y="Value")
+
+
+# plot by count 
+ggplot()
+
 ```
+
+
+
+
+

@@ -214,6 +214,7 @@ floodModel <- glm(flood ~ .,
 summary(floodModel)
 ```
 
+# MAKE CHANGES FROM HERE ON
 ## Model validation
 ```{r}
 ## check from this point, something wrong, observation out put is 1 and 2 instead of 0 and 1
@@ -223,6 +224,9 @@ hist(classProbs)
 
 testProbs <- data.frame(obs = as.numeric(floodTest$flood),
                         pred = classProbs)
+
+floodTest$flood <- as.factor(floodTest$flood)
+levels(floodTest$flood) <- c(0, 1)
 
 ggplot(testProbs, aes(x = pred, fill=as.factor(obs))) + 
   geom_density() +
@@ -245,4 +249,39 @@ caret::confusionMatrix(reference = as.factor(testProbs$obs),
                        positive = "1")
 ```
 
+## ROC Curve
+```{r}
+ggplot(testProbs, aes(d = obs, m = pred)) + 
+  geom_roc(n.cuts = 50, labels = FALSE) + 
+  style_roc(theme = theme_grey) +
+  geom_abline(slope = 1, intercept = 0, size = 1.5, color = 'grey') 
 
+#area under the curve
+auc(testProbs$obs, testProbs$pred)
+```
+
+## Cross-validation
+```{r}
+ctrl <- trainControl(method = "cv", 
+                     number = 100, 
+                     p = 0.7, 
+                     savePredictions = TRUE)
+
+cvFit <- train(as.factor(preserve) ~ .,  data = preserve %>% 
+                                                as.data.frame() %>%
+                                                select(-geometry, -Id), 
+               method="glm", family="binomial",
+               trControl = ctrl)
+
+cvFit
+
+ggplot(as.data.frame(cvFit$resample), aes(Accuracy)) + 
+  geom_histogram() +
+  scale_x_continuous(limits = c(0, 1)) +
+  labs(x="Accuracy",
+       y="Count")+
+  plotTheme
+```
+
+
+## APPLY MODEL TO DENVER

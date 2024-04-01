@@ -1,0 +1,132 @@
+---
+  title: "LUEM_assignment3"
+author: "Lu Yii Wong & Yujin Song"
+date: "2024-03-22"
+output:
+  html_document:
+  toc: true
+toc_float: true
+code_folding: hide
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, warning = FALSE, include=FALSE, message = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(caret)
+library(pscl)
+library(plotROC)
+library(pROC)
+library(sf)
+library(tidyverse)
+library(knitr)
+library(kableExtra)
+library(tigris)
+library(viridis)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r themes}
+mapTheme <- theme(plot.title =element_text(size=12),
+                  plot.subtitle = element_text(size=8),
+                  plot.caption = element_text(size = 6),
+                  axis.line=element_blank(),
+                  axis.text.x=element_blank(),
+                  axis.text.y=element_blank(),
+                  axis.ticks=element_blank(),
+                  axis.title.x=element_blank(),
+                  axis.title.y=element_blank(),
+                  panel.background=element_blank(),
+                  panel.border=element_blank(),
+                  panel.grid.major=element_line(colour = 'transparent'),
+                  panel.grid.minor=element_blank(),
+                  legend.direction = "vertical", 
+                  legend.position = "right",
+                  plot.margin = margin(1, 1, 1, 1, 'cm'),
+                  legend.key.height = unit(1, "cm"), legend.key.width = unit(0.2, "cm"))
+
+plotTheme <- theme(
+  plot.title =element_text(size=12),
+  plot.subtitle = element_text(size=8),
+  plot.caption = element_text(size = 6),
+  axis.text.x = element_text(size = 10, angle = 45, hjust = 1),
+  axis.text.y = element_text(size = 10),
+  axis.title.y = element_text(size = 10),
+  # Set the entire chart region to blank
+  panel.background=element_blank(),
+  plot.background=element_blank(),
+  #panel.border=element_rect(colour="#F0F0F0"),
+  # Format the grid
+  panel.grid.major=element_line(colour="#D0D0D0",size=.75),
+  axis.ticks=element_blank())
+
+```
+
+
+```{r load data for Denver}
+# independent variables
+elevation_den <- read.csv("https://raw.githubusercontent.com/luyiiw/LUEM/main/denver_table/Zonal_elevation_den.csv")
+
+flow_acc_den <- read.csv("https://raw.githubusercontent.com/luyiiw/LUEM/main/denver_table/Zonal_fac_den.csv")
+
+land_use_den <- read.csv("https://raw.githubusercontent.com/luyiiw/LUEM/main/denver_table/Zonal_permea_den.csv")
+
+slope_den <- read.csv("https://raw.githubusercontent.com/luyiiw/LUEM/main/denver_table/Zonal_slope_den.csv")
+
+water_body_den <- read.csv("https://raw.githubusercontent.com/luyiiw/LUEM/main/denver_table/Zonal_waterdist_den.csv")
+
+```
+
+
+Exploratory Analysis
+```{r}
+# Creating tables to combine exploratory data
+flood <- inundation %>%
+  select(OBJECTID, RANGE) %>%
+  rename(flood = RANGE) %>%
+  mutate(flood = factor(flood))
+
+# 1 = flood, 0 = no flood
+
+#1 Elevation
+elev_comb_den <- elevation_den %>%
+  select(OBJECTID, MEAN) %>%
+  rename(mean_elev= MEAN)
+
+#2 Slope
+slope_comb_den <- slope_den %>%
+  select(OBJECTID, MAX) %>%
+  rename(max_slope= MAX)
+# maybe consider mean for model
+
+#3 Water body
+water_comb_den <- water_body_den %>%
+  select(OBJECTID, MIN) %>%
+  rename(min_dist_water= MIN)
+
+#4 Flow accumulation
+fac_comb_den <-  flow_acc_den %>%
+  select(OBJECTID, MEAN) %>%
+  rename(mean_fac= MEAN)
+#changed from max to mean
+
+#5 Land Use/Permeability
+# Use max, it's dummy var, as.factor
+lu_comb_den <- land_use_den %>%
+  select(OBJECTID, MAX)%>%
+  rename(land_use = MAX) %>%
+  mutate(land_use = factor(land_use))
+
+# Urban = 1 , non-urban = 0
+
+
+# Combining the tables (think of another way to do this)
+flood_comb_den <- cbind(elev_comb_den, slope_comb_den, water_comb_den, fac_comb_den) 
+
+

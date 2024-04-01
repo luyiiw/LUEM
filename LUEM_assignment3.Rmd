@@ -116,26 +116,16 @@ fac_comb <-  flow_acc %>%
 #changed from max to mean
 
 #5 Land Use/Permeability
-# Use max, it's dummy var, as.factor
 lu_comb <- land_use %>%
-  select(OBJECTID, MAX)%>%
-  rename(land_use = MAX) %>%
-  mutate(land_use = factor(land_use))
-# Urban = 1 , non-urban = 0
-
-# RECLASSIFYING
-lu_comb1 <- land_use %>%
-  select(OBJECTID, MEAN)%>%
-  rename(land_use1 = MEAN) 
-
-lu_comb1 <- lu_comb1 %>%
+  select(OBJECTID, MEAN) %>%
+  rename(land_use = MEAN) %>%
   mutate(permeability = case_when(
-    land_use1 < 0.25 ~ '0',
-    land_use1 >= 0.25 ~ '1')) %>%
-  select(-land_use1)
+    land_use < 0.25 ~ '0',
+    land_use >= 0.25 ~ '1')) %>%
+  select(-land_use)
 
 # Removing unnecessary data sets
-rm(flow_acc, land_use, slope, water_body)
+rm(inundation, elevation, flow_acc, land_use, slope, water_body)
 ```
 
 ```{r}
@@ -145,12 +135,6 @@ flood_comb <- flood %>%
   inner_join(slope_comb, by = "OBJECTID") %>%
   inner_join(water_comb, by = "OBJECTID") %>%
   inner_join(fac_comb, by = "OBJECTID")
-
-
-# flood_comb <- cbind(flood, elev_comb, slope_comb, water_comb, fac_comb) 
-
-#flood_comb2 <- cbind(flood, elev_comb [, -1], slope_comb [, -1], water_comb [, -1], fac_comb [, -1]) %>%
- # rename(mean_elev = elev_comb [, -1])
 
 floodPlotVariables <- 
   flood_comb %>%
@@ -175,20 +159,7 @@ ggplot(floodPlotVariables %>%
                       name = "") +
     labs(x="Flood", y="Value") 
 
-
-# Plotting dummy variables
-# Assuming flood and land_use are already created as factor variables
-dummy_comb <- merge(flood, lu_comb, by = "OBJECTID", all = TRUE)
-
-# Plot the bar graph
-ggplot(dummy_comb, aes(x = flood, fill = land_use)) +
-  geom_bar(position = "dodge") +
-  labs(x = "Flood", y = "Count", fill = "Land Use") +
-  scale_fill_manual(values = c("dark green", "dark blue"), 
-                    labels = c("Non-Urban", "Urban")) 
-#change the colors 
-#graph shows that urban areas flood more
-
+rm(flood_comb)
 ```
 
 
@@ -201,7 +172,7 @@ model_data <- flood %>%
   inner_join(slope_comb, by = "OBJECTID") %>%
   inner_join(water_comb, by = "OBJECTID") %>%
   inner_join(fac_comb, by = "OBJECTID") %>%
-  inner_join(lu_comb1, by = "OBJECTID") %>%
+  inner_join(lu_comb, by = "OBJECTID") %>%
   mutate(permeability = as.factor(permeability))
 
 #land cover is dummy var and categorical var
@@ -216,7 +187,6 @@ trainIndex <- createDataPartition(model_data$permeability, p = .70,
 floodTrain <- model_data[ trainIndex,]
 floodTest  <- model_data[-trainIndex,]
 
-## work on this to correct the data set output
 ```
 
 
@@ -229,13 +199,10 @@ floodModel <- glm(flood ~ .,
 summary(floodModel)
 ```
 
-# MAKE CHANGES FROM HERE ON
+
 ## Model validation
 ```{r}
-## check from this point, something wrong, observation out put is 1 and 2 instead of 0 and 1
 classProbs <- predict(floodModel, floodTest, type="response")
-
-
 hist(classProbs)
 
 testProbs <- data.frame(obs = as.factor(floodTest$flood),
@@ -275,15 +242,14 @@ Predicted = 0, Observed = 1 —> False Negative (Incorrectly predicted no flood 
 
 ```{r roc_curve, message = FALSE, warning = FALSE}
 # change obs to numeric
-# Assuming 'factor_column' is the name of the factor column you want to convert to numeric
-
 testProbs$obs <- as.numeric(as.character(testProbs$obs))
 
-# why is plot not showing up?
+# plot results
 ggplot(testProbs, aes(d = obs, m = pred)) + 
   geom_roc(n.cuts = 50, labels = FALSE) + 
   style_roc(theme = theme_grey) +
-  geom_abline(slope = 1, intercept = 0, size = 1.5, color = 'grey') 
+  geom_abline(slope = 1, intercept = 0, size = 1.5, color = 'grey') +
+  plotTheme
 
 #area under the curve
 auc(testProbs$obs, testProbs$pred)
@@ -296,9 +262,8 @@ ctrl <- trainControl(method = "cv",
                      p = 0.7, 
                      savePredictions = TRUE)
 
-cvFit <- train(as.factor(preserve) ~ .,  data = preserve %>% 
-                                                as.data.frame() %>%
-                                                select(-geometry, -Id), 
+cvFit <- train(as.factor(flood) ~ .,  data = flood %>% 
+                                                as.data.frame(), 
                method="glm", family="binomial",
                trControl = ctrl)
 

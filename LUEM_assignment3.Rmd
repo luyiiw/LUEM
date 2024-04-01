@@ -1,5 +1,5 @@
 ---
-title: "LUEM_assignment3"
+title: "Estimating Flood Inundation Probability Map"
 author: "Lu Yii Wong & Yujin Song"
 date: "2024-03-22"
 output:
@@ -11,7 +11,7 @@ editor_options:
   chunk_output_type: console
 ---
 
-## Setup
+# Setup
 ```{r setup, warning = FALSE, include=FALSE, message = FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
@@ -64,7 +64,7 @@ plotTheme <- theme(
 
 ```
 
-
+## Load data
 ```{r load data}
 # dependent variable
 inundation <- read.csv("https://raw.githubusercontent.com/luyiiw/LUEM/main/calgary_table/zonal_depe.csv")
@@ -128,6 +128,7 @@ lu_comb <- land_use %>%
 rm(inundation, elevation, flow_acc, land_use, slope, water_body)
 ```
 
+## Plotting Variables
 ```{r}
 # Combining the tables (think of another way to do this) consider merge?
 flood_comb <- flood %>%
@@ -163,8 +164,8 @@ rm(flood_comb)
 ```
 
 
-## Model Building 
-### Partition training and test sets
+# Model Building 
+## Partition Training and Test Sets
 ```{r}
 # Combine all data sets for model building
 model_data <- flood %>%
@@ -190,7 +191,7 @@ floodTest  <- model_data[-trainIndex,]
 ```
 
 
-## Making the binomial model
+## Making the Binomial Model
 ```{r}
 floodModel <- glm(flood ~ ., 
                     family="binomial"(link="logit"), data = floodTrain %>%
@@ -199,8 +200,7 @@ floodModel <- glm(flood ~ .,
 summary(floodModel)
 ```
 
-
-## Model validation
+## Model Validation
 ```{r}
 classProbs <- predict(floodModel, floodTest, type="response")
 hist(classProbs)
@@ -278,4 +278,4 @@ ggplot(as.data.frame(cvFit$resample), aes(Accuracy)) +
 ```
 
 
-## APPLY MODEL TO DENVER
+# APPLY MODEL TO DENVER

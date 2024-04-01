@@ -102,7 +102,6 @@ elev_comb <- elevation %>%
 slope_comb <- slope %>%
   select(OBJECTID, MAX) %>%
   rename(max_slope= MAX)
-# maybe consider mean for model
 
 #3 Water body
 water_comb <- water_body %>%
@@ -279,3 +278,70 @@ ggplot(as.data.frame(cvFit$resample), aes(Accuracy)) +
 
 
 # APPLY MODEL TO DENVER
+## Load Data
+```{r load data for Denver}
+# independent variables
+elevation_den <- read.csv("https://raw.githubusercontent.com/luyiiw/LUEM/main/denver_table/Zonal_elevation_den.csv")
+
+flow_acc_den <- read.csv("https://raw.githubusercontent.com/luyiiw/LUEM/main/denver_table/Zonal_fac_den.csv")
+
+land_use_den <- read.csv("https://raw.githubusercontent.com/luyiiw/LUEM/main/denver_table/Zonal_permea_den.csv")
+
+slope_den <- read.csv("https://raw.githubusercontent.com/luyiiw/LUEM/main/denver_table/Zonal_slope_den.csv")
+
+water_body_den <- read.csv("https://raw.githubusercontent.com/luyiiw/LUEM/main/denver_table/Zonal_waterdist_den.csv")
+
+```
+
+## Denver data cleaning
+```{r}
+#1 Elevation
+elev_comb_den <- elevation_den %>%
+  select(OBJECTID, MEAN) %>%
+  rename(mean_elev= MEAN)
+
+#2 Slope
+slope_comb_den <- slope_den %>%
+  select(OBJECTID, MAX) %>%
+  rename(max_slope= MAX)
+
+#3 Water body
+water_comb_den <- water_body_den %>%
+  select(OBJECTID, MIN) %>%
+  rename(min_dist_water= MIN)
+
+#4 Flow accumulation
+fac_comb_den <-  flow_acc_den %>%
+  select(OBJECTID, MEAN) %>%
+  rename(mean_fac= MEAN)
+#changed from max to mean
+
+#5 Land Use/Permeability
+lu_comb_den <- land_use_den %>%
+  select(OBJECTID, MEAN) %>%
+  rename(land_use = MEAN) %>%
+  mutate(permeability = case_when(
+    land_use < 0.25 ~ '0',
+    land_use >= 0.25 ~ '1')) %>%
+  select(-land_use)
+
+```
+
+## Model Building Denver
+```{r}
+# Combine all data sets for DENVER model building
+model_data_den <- elev_comb_den %>%
+  inner_join(slope_comb_den, by = "OBJECTID") %>%
+  inner_join(water_comb_den, by = "OBJECTID") %>%
+  inner_join(fac_comb_den, by = "OBJECTID") %>%
+  inner_join(lu_comb_den, by = "OBJECTID") %>%
+  mutate(permeability = as.factor(permeability))
+```
+
+## Predicting Flood in Denver
+```{r}
+den_classProbs <- predict(floodModel, model_data_den, type = "response")
+
+den_floodModel <- cbind(model_data_den, den_classProbs)
+```
+

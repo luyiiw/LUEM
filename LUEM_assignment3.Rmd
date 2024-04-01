@@ -123,6 +123,16 @@ lu_comb <- land_use %>%
   mutate(land_use = factor(land_use))
 # Urban = 1 , non-urban = 0
 
+# RECLASSIFYING
+lu_comb1 <- land_use %>%
+  select(OBJECTID, MEAN)%>%
+  rename(land_use1 = MEAN) 
+
+lu_comb1 <- lu_comb1 %>%
+  mutate(permeability = case_when(
+    land_use1 < 0.25 ~ '0',
+    land_use1 >= 0.25 ~ '1')) %>%
+  select(-land_use1)
 
 # Removing unnecessary data sets
 rm(flow_acc, land_use, slope, water_body)
@@ -191,14 +201,15 @@ model_data <- flood %>%
   inner_join(slope_comb, by = "OBJECTID") %>%
   inner_join(water_comb, by = "OBJECTID") %>%
   inner_join(fac_comb, by = "OBJECTID") %>%
-  mutate(flood = as.factor(flood))
+  inner_join(lu_comb1, by = "OBJECTID") %>%
+  mutate(permeability = as.factor(permeability))
 
-#took out land cover
+#land cover is dummy var and categorical var
 
 
 # Creating training and test sets
 set.seed(3456)
-trainIndex <- createDataPartition(model_data$flood, p = .70,
+trainIndex <- createDataPartition(model_data$permeability, p = .70,
                                   list = FALSE,
                                   times = 1)
 
@@ -223,6 +234,7 @@ summary(floodModel)
 ```{r}
 ## check from this point, something wrong, observation out put is 1 and 2 instead of 0 and 1
 classProbs <- predict(floodModel, floodTest, type="response")
+
 
 hist(classProbs)
 
@@ -262,37 +274,16 @@ Predicted = 0, Observed = 1 —> False Negative (Incorrectly predicted no flood 
 ## ROC Curve
 
 ```{r roc_curve, message = FALSE, warning = FALSE}
-#code from conservation predictive modeling 
+# change obs to numeric
+# Assuming 'factor_column' is the name of the factor column you want to convert to numeric
+
+testProbs$obs <- as.numeric(as.character(testProbs$obs))
+
+# why is plot not showing up?
 ggplot(testProbs, aes(d = obs, m = pred)) + 
   geom_roc(n.cuts = 50, labels = FALSE) + 
   style_roc(theme = theme_grey) +
   geom_abline(slope = 1, intercept = 0, size = 1.5, color = 'grey') 
-
-```
-
-```{r}
-
-# why is plot not showing up?
-ggplot(testProbs, aes(d = obs, m = pred)) + 
-  geom_roc(n.cuts = 10, labels = FALSE) + 
-  style_roc(theme = theme_grey) +
-  geom_abline(slope = 1, intercept = 0, size = 1.5, color = 'grey') 
-
-# alternate 
-ggplot(testProbs, aes(d = obs, m = pred)) + 
-  geom_roc(n.cuts = 10, labels = FALSE) + 
-  style_roc(theme = theme_grey) +
-  geom_abline(slope = 1, intercept = 0, linewidth = 1.5, color = 'grey') 
-
-# Assuming classProbs contains the predicted probabilities for the positive class
-roc_curve <- roc(testProbs$obs, testProbs$pred)
-
-# Plot ROC curve using ggplot2
-ggplot(data = roc_curve, aes(x = 1 - specificity, y = sensitivity)) +
-  geom_line() +
-  geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
-  labs(x = "False Positive Rate", y = "True Positive Rate", title = "ROC Curve")
-
 
 #area under the curve
 auc(testProbs$obs, testProbs$pred)

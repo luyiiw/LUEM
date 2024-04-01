@@ -122,6 +122,10 @@ lu_comb <- land_use %>%
   rename(land_use = MAX) %>%
   mutate(land_use = factor(land_use))
 # Urban = 1 , non-urban = 0
+
+
+# Removing unnecessary data sets
+rm(flow_acc, land_use, slope, water_body)
 ```
 
 ```{r}

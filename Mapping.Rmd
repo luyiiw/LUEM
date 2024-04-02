@@ -76,12 +76,15 @@ ggplot() +
   labs(title="Past Flood in Calgary")+
   mapTheme
 
-
+##Design Refinement Later
 ```
-```{Raster Clipping_Calgary}
+
+```{Raster cleaning for Calgary Dependent}
+
 library(raster)
 library(rgdal)
 
+#Dependent 
 dependent <- raster("C:/Users/USER/Desktop/LandUseModeling/Assignment3/calgary_raster/dependent.tif")
 dependent_df <- as.data.frame(dependent, xy = TRUE)
 
@@ -100,52 +103,94 @@ ggplot() +
       coord_sf() +
     labs(title = "Raster Layer with Fishnet Overlay") +
   mapTheme
+
+
+
+
+
+##Design Refinement Later
 ```
 
-library(raster)
-library(rgdal)
-
-GDALinfo("C:/Users/USER/Desktop/LandUseModeling/Assignment3/calgary_raster/dependent.tif")
-
-inundation_info <- capture.output(
-  GDALinfo("C:/Users/USER/Desktop/LandUseModeling/Assignment3/calgary_raster/dependent.tif")
-)
-inundation_info
 
 
+calgary_fac<-raster("C:/Users/USER/Desktop/LandUseModeling/Assignment3/calgary_raster/Calgary_fac.tif")
+calgary_fac_df <- as.data.frame(dependent, xy = TRUE)
 
-dependent_df <- as.data.frame(dependent, xy = TRUE)
+clipped_cal_fac <- mask(calgary_fac,calfishnet_shp)
+cal_fac_df <-as.data.frame(clipped_cal_fac, xy=TRUE)
 
 ggplot() +
-    geom_raster(data = dependent_df , aes(x = x, y = y, fill =dependent)) +
+    geom_raster(data = cal_fac_df , aes(x = x, y = y, fill =Calgary_fac)) +
+    geom_sf(data = calgary_fishnet, color = "red", fill = NA) +
     scale_fill_viridis_c() +
-    coord_quickmap()
+      coord_sf() +
+    labs(title = "Raster Layer with Fishnet Overlay") +
+  mapTheme
+  
+  
+##permeability  
+calgary_perme<-raster("C:/Users/USER/Desktop/LandUseModeling/Assignment3/calgary_raster/calgary_perme.tif")
+calgary_perme_df <- as.data.frame(calgary_perme, xy = TRUE)
 
-
-library(sf)
-
-
-fishnet<- st_read("C:/Users/USER/Desktop/LandUseModeling/Assignment3/Calgary/fishnet_boundary.shp")
-st_geometry_type(fishnet)
-new_fishnet <- st_zm(fishnet, drop = TRUE)
-
-sffishnet <- st_zm(fishnet, drop=TRUE, what="Z")
-
-clipped_raster <- mask(dependent,new_fishnet)
-
-
-clip_df <-as.data.frame(clipped_raster, xy=TRUE)
+clipped_cal_perme <- mask(calgary_perme,calfishnet_shp)
+cal_perme_df <-as.data.frame(clipped_cal_perme, xy=TRUE)
 
 ggplot() +
-    geom_raster(data = clip_df , aes(x = x, y = y, fill =dependent)) +
+    geom_raster(data = cal_perme_df , aes(x = x, y = y, fill =calgary_perme)) +
+    geom_sf(data = calgary_fishnet, color = "red", fill = NA) +
+    scale_fill_viridis_c() +
+      coord_sf() +
+    labs(title = "Raster Layer with Fishnet Overlay") +
+  mapTheme
+   
+  
+##water
+calgary_water<-raster("C:/Users/USER/Desktop/LandUseModeling/Assignment3/calgary_raster/calgary_water.tif")
+
+clipped_cal_water <- mask(calgary_water,calfishnet_shp)
+cal_water_df <-as.data.frame(clipped_cal_water, xy=TRUE)
+
+ggplot() +
+    geom_raster(data = cal_water_df , aes(x = x, y = y, fill =calgary_water)) +
     geom_sf(data = calgary_fishnet, color = "red", fill = NA) +
     scale_fill_viridis_c() +
       coord_sf() +
     labs(title = "Raster Layer with Fishnet Overlay") +
   mapTheme
 
-dependent <- raster("C:/Users/USER/Desktop/LandUseModeling/Assignment3/calgary_raster/dependent.tif")
-writeRaster(dependent, filename="C://Users//USER//Desktop//LandUseModeling//Assignment3//calgary_raster/dependent.tif", format="GTiff", overwrite=TRUE)
+
+##slope
+
+calgary_slope<-raster("C:/Users/USER/Desktop/LandUseModeling/Assignment3/calgary_raster/calgary_slope.tif")
+
+clipped_cal_slope <- mask(calgary_slope,calfishnet_shp)
+cal_slope_df <-as.data.frame(clipped_cal_slope, xy=TRUE)
+
+ggplot() +
+    geom_raster(data = cal_slope_df , aes(x = x, y = y, fill =calgary_slope)) +
+    geom_sf(data = calgary_fishnet, color = "red", fill = NA) +
+    scale_fill_viridis_c() +
+      coord_sf() +
+    labs(title = "Raster Layer with Fishnet Overlay") +
+  mapTheme
+
+##Elevation
+
+calgary_dem<-raster("C:/Users/USER/Desktop/LandUseModeling/Assignment3/calgary_raster/calgary_dem.tif")
+
+clipped_cal_dem <- mask(calgary_dem,calfishnet_shp)
+cal_dem_df <-as.data.frame(clipped_cal_dem, xy=TRUE)
+
+ggplot() +
+    geom_raster(data = cal_dem_df, aes(x = x, y = y, fill =calgary_dem)) +
+    geom_sf(data = calgary_fishnet, color = "red", fill = NA) +
+    scale_fill_viridis_c() +
+      coord_sf() +
+    labs(title = "Raster Layer with Fishnet Overlay") +
+  mapTheme
+  
+  
+##Predicted Variable
 
 
 
@@ -157,3 +202,13 @@ writeRaster(dependent, filename="C://Users//USER//Desktop//LandUseModeling//Assi
 
 
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  

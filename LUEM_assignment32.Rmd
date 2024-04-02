@@ -82,54 +82,12 @@ water_body <- read.csv("https://raw.githubusercontent.com/luyiiw/LUEM/main/calga
 
 ```
 
-## Fishnet and Joining
-```{r Fishnet}
 
-calgary_fishnet<-st_read("https://raw.githubusercontent.com/luyiiw/LUEM/main/Calgary_JSON/Calgary_Fishnet.json")
-calgary_boundary<-st_read("https://raw.githubusercontent.com/luyiiw/LUEM/main/Calgary_JSON/Calgary_Boundary.json")
-
-calgary_Floods <- calgary_fishnet %>% 
-  left_join(inundation, by = "FID")
-
-calgary_Floods$RANGE<-as.factor(calgary_Floods$RANGE)
-
-ggplot() + 
-  geom_sf(data=calgary_fishnet,color="grey",size=0.2) +
-  geom_sf(data=calgary_Floods ,aes(fill=RANGE),size=0.5) +
-   scale_fill_manual(values = c("1"= "#e31a1c", "0" = "#bdbdbd"),
-                     labels = c("1" = "Inundation", "0" = "No Inundation"),
-                  name = "Inundation Status") +
-  labs(title="Past Flood Inundation in Calgary, Canada")+
-  mapTheme+
-    guides(fill = guide_legend(override.aes = list(shape = 22, size = 6)))
-
-
-ggplot() + 
-  geom_sf(data=calgary_fishnet,color="grey",size=0.2) +
-  geom_sf(data=calgary_Floods ,aes(fill=RANGE),size=0.5) +
-   scale_fill_manual(values = c("1"= "#1f78b4", "0" = "#b2df8a"),
-                     labels = c("1" = "Inundation", "0" = "No Inundation"),
-                  name = "Inundation Status") +
-  labs(title="Past Flood Inundation in Calgary, Canada")+
-  mapTheme+
-    guides(fill = guide_legend(override.aes = list(shape = 22, size = 6)))
-
-ggplot() + 
-  geom_sf(data=calgary_fishnet,color="grey",size=0.2) +
-  geom_sf(data=calgary_Floods ,aes(fill=RANGE),size=0.5) +
-   scale_fill_manual(values = c("1"= "#1f78b4", "0" = "#e7f5c6"),
-                     labels = c("1" = "Inundation", "0" = "No Inundation"),
-                  name = "Inundation Status") +
-  labs(title="Past Flood Inundation in Calgary, Canada")+
-  mapTheme+
-    guides(fill = guide_legend(override.aes = list(shape = 22, size = 6)))
-
-```
 # Exploratory Analysis
 ```{r}
 # Creating tables to combine exploratory data
-flood_dep <- inundation %>%
-  select(FID, RANGE) %>%
+flood <- inundation %>%
+  select(OBJECTID, RANGE) %>%
   rename(flood = RANGE) %>%
   mutate(flood = factor(flood))
 
@@ -137,28 +95,28 @@ flood_dep <- inundation %>%
 
 #1 Elevation
 elev_comb <- elevation %>%
-  select(FID, MEAN) %>%
+  select(OBJECTID, MEAN) %>%
   rename(mean_elev= MEAN)
 
 #2 Slope
 slope_comb <- slope %>%
-  select(FID, MAX) %>%
+  select(OBJECTID, MAX) %>%
   rename(max_slope= MAX)
 
 #3 Water body
 water_comb <- water_body %>%
-  select(FID, MIN) %>%
+  select(OBJECTID, MIN) %>%
   rename(min_dist_water= MIN)
 
 #4 Flow accumulation
 fac_comb <-  flow_acc %>%
-  select(FID, MEAN) %>%
+  select(OBJECTID, MEAN) %>%
   rename(mean_fac= MEAN)
 #changed from max to mean
 
 #5 Land Use/Permeability
 lu_comb <- land_use %>%
-  select(FID, MEAN) %>%
+  select(OBJECTID, MEAN) %>%
   rename(land_use = MEAN) %>%
   mutate(permeability = case_when(
     land_use < 0.25 ~ '0',
@@ -172,11 +130,11 @@ rm(inundation, elevation, flow_acc, land_use, slope, water_body)
 ## Plotting Variables
 ```{r}
 # Combining the tables (think of another way to do this) consider merge?
-flood_comb <- flood_dep %>%
-  inner_join(elev_comb, by = "FID") %>%
-  inner_join(slope_comb, by = "FID") %>%
-  inner_join(water_comb, by = "FID") %>%
-  inner_join(fac_comb, by = "FID")
+flood_comb <- flood %>%
+  inner_join(elev_comb, by = "OBJECTID") %>%
+  inner_join(slope_comb, by = "OBJECTID") %>%
+  inner_join(water_comb, by = "OBJECTID") %>%
+  inner_join(fac_comb, by = "OBJECTID")
 
 floodPlotVariables <- 
   flood_comb %>%
@@ -209,12 +167,12 @@ rm(flood_comb)
 ## Partition Training and Test Sets
 ```{r}
 # Combine all data sets for model building
-model_data <- flood_dep %>%
-  inner_join(elev_comb, by = "FID") %>%
-  inner_join(slope_comb, by = "FID") %>%
-  inner_join(water_comb, by = "FID") %>%
-  inner_join(fac_comb, by = "FID") %>%
-  inner_join(lu_comb, by = "FID") %>%
+model_data <- flood %>%
+  inner_join(elev_comb, by = "OBJECTID") %>%
+  inner_join(slope_comb, by = "OBJECTID") %>%
+  inner_join(water_comb, by = "OBJECTID") %>%
+  inner_join(fac_comb, by = "OBJECTID") %>%
+  inner_join(lu_comb, by = "OBJECTID") %>%
   mutate(permeability = as.factor(permeability))
 
 #land cover is dummy var and categorical var
@@ -237,7 +195,7 @@ floodTest  <- model_data[-trainIndex,]
 floodModel <- glm(flood ~ ., 
                     family="binomial"(link="logit"), data = floodTrain %>%
                                                             as.data.frame() %>%
-                                                            select(-FID))
+                                                            select(-OBJECTID))
 summary(floodModel)
 ```
 

@@ -193,18 +193,104 @@ ggplot() +
 ##Predicted Variable
 
 
+#Denver
+##Denver Fishnet
+denver_fishnet<-st_read("https://raw.githubusercontent.com/luyiiw/LUEM/main/Denver_JSON/denver_fishnet.json")
+denver_boundary<-st_read("https://raw.githubusercontent.com/luyiiw/LUEM/main/Denver_JSON/denver_boundary.json")
+
+ggplot() + 
+  geom_sf(data=denver_boundary,fill=NA, color="blue",size=0.5) +
+  geom_sf(data=denver_fishnet,color="red",size=0.2) +
+  labs(title="Denver Fishnet")+
+  mapTheme
+
+##Design Refinement Later
+
+##cleaning Denver Boundary
+fishnet_shp_den<- st_read("C:/Users/USER/Desktop/LandUseModeling/Assignment3/Denver/denver_boundary.shp")
+st_geometry_type(fishnet_shp_den)
+
+denfishnet_shp <- st_zm(fishnet_shp_den, drop = TRUE)
 
 
+#Denver Fac
+den_fac<-raster("C:/Users/USER/Desktop/LandUseModeling/Assignment3/denver_rast/den_fac.tif")
+clipped_den_fac <- mask(den_fac,denfishnet_shp )
+den_fac_df <-as.data.frame(clipped_den_fac , xy=TRUE)
 
-
-
-
-
-
-
+ggplot() +
+    geom_raster(data = den_fac_df  , aes(x = x, y = y, fill =den_fac)) +
+    geom_sf(data = denver_fishnet, color = "red", fill = NA) +
+    scale_fill_viridis_c() +
+      coord_sf() +
+    labs(title = "Raster Layer with Fishnet Overlay") +
+  mapTheme
   
   
+##permeability  
+den_perme<-raster("C:/Users/USER/Desktop/LandUseModeling/Assignment3/denver_rast/den_perme.tif")
+clipped_den_perme <- mask(den_perme,denfishnet_shp)
+den_perme_df <-as.data.frame(clipped_den_perme, xy=TRUE)
+
+ggplot() +
+    geom_raster(data = den_perme_df , aes(x = x, y = y, fill =den_perme)) +
+    geom_sf(data = denver_fishnet, color = "red", fill = NA) +
+    scale_fill_viridis_c() +
+      coord_sf() +
+    labs(title = "Raster Layer with Fishnet Overlay") +
+  mapTheme
+   
   
+##water
+den_water<-raster("C:/Users/USER/Desktop/LandUseModeling/Assignment3/denver_rast/den_water.tif")
+
+clipped_den_water <- mask(den_water,denfishnet_shp)
+den_water_df <-as.data.frame(clipped_den_water, xy=TRUE)
+
+ggplot() +
+    geom_raster(data = den_water_df , aes(x = x, y = y, fill =den_water)) +
+    geom_sf(data = denver_fishnet, color = "red", fill = NA) +
+    scale_fill_viridis_c() +
+      coord_sf() +
+    labs(title = "Raster Layer with Fishnet Overlay") +
+  mapTheme
+
+
+##slope
+
+denver_slope<-raster("C:/Users/USER/Desktop/LandUseModeling/Assignment3/denver_rast/den_slope.tif")
+
+clipped_den_slope <- mask(denver_slope,denfishnet_shp)
+den_slope_df <-as.data.frame(clipped_den_slope, xy=TRUE)
+
+ggplot() +
+    geom_raster(data = den_slope_df, aes(x = x, y = y, fill =den_slope)) +
+    geom_sf(data = denver_fishnet, color = "red", fill = NA) +
+    scale_fill_viridis_c() +
+      coord_sf() +
+    labs(title = "Raster Layer with Fishnet Overlay") +
+  mapTheme
+
+##Elevation
+
+den_dem<-raster("C:/Users/USER/Desktop/LandUseModeling/Assignment3/denver_rast/den_dem.tif")
+
+clipped_den_dem <- mask(den_dem,denfishnet_shp)
+den_dem_df <-as.data.frame(clipped_den_dem , xy=TRUE)
+
+ggplot() +
+    geom_raster(data = den_dem_df , aes(x = x, y = y, fill =den_dem)) +
+    geom_sf(data = denver_fishnet, color = "red", fill = NA) +
+    scale_fill_viridis_c() +
+      coord_sf() +
+    labs(title = "Raster Layer with Fishnet Overlay") +
+  mapTheme
+  
+
+
+calgary_fishnet01<-calgary_fishnet%>%mutate(calgary_fishnet$)
+
+calgary_fishnet$OBJECTID <- 1:nrow(calgary_fishnet)
   
   
   

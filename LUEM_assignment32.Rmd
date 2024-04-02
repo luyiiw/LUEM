@@ -267,6 +267,7 @@ cvFit <- train(as.factor(flood) ~ .,  data = model_data %>%
                trControl = ctrl)
 
 cvFit
+
 ggplot(as.data.frame(cvFit$resample), aes(Accuracy)) + 
   geom_histogram() +
   scale_x_continuous(limits = c(0, 1)) +
@@ -320,6 +321,21 @@ ggplot() +
   mapTheme +
   labs(title="Predicted Probabilities and Past Flood",
        subtitle="Calgary; Past Flood in red")
+
+
+trainPredictions <- 
+  predict(cvFit, finalTrain, type="prob")[,2]
+
+
+
+
+
+
+
+
+
+
+
 
 ```
 

@@ -316,8 +316,10 @@ ggplot(as.data.frame(cvFit$resample), aes(Accuracy)) +
   labs(x="Accuracy",
        y="Count")+
   plotTheme
+```
 
-
+## Cross-validation
+```{r}
 ###Refine here by yujin
 allPredictions <- 
   predict(cvFit, flood, type="prob")[,2]
@@ -367,17 +369,6 @@ ggplot() +
 
 trainPredictions <- 
   predict(cvFit, finalTrain, type="prob")[,2]
-
-
-
-
-
-
-
-
-
-
-
 
 ```
 

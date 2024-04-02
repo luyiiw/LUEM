@@ -64,43 +64,93 @@ plotTheme <- theme(
   # Format the grid
   panel.grid.major=element_line(colour="#D0D0D0",size=.75),
   axis.ticks=element_blank())
-
 ```
 
 ```{r themes}
 calgary_fishnet<-st_read("https://raw.githubusercontent.com/luyiiw/LUEM/main/Calgary_JSON/Calgary_Fishnet.json")
-
-imit <- 
-  st_read("./midTermProject_Data/CALGIS_CITYBOUND_LIMIT/CALGIS_CITYBOUND_LIMIT.shp") %>%
-  st_transform(crs=3780)
-
-fishnet <- 
-  st_make_grid(limit, cellsize = 500) %>%
-  st_sf()
-
-fishnet <- 
-  fishnet[limit,] %>%
-  mutate(uniqueID = rownames(.)) %>%
-  dplyr::select(uniqueID)
-
-river <- st_read("./calgary/river_r.shp") %>%
-  st_transform(crs=3780)
-
-flood <- st_read("./calgary/flood_r.shp") %>%
-  st_transform(crs=3780)
+calgary_boundary<-st_read("https://raw.githubusercontent.com/luyiiw/LUEM/main/Calgary_JSON/Calgary_Boundary.json")
 
 ggplot() + 
-  geom_sf(data=limit) +
-  geom_sf(data=flood,color="red", fill="red") +
-  labs(title="Past Flood in Calgary") +
-  mapTheme()
-
-
-
-
+  geom_sf(data=calgary_boundary,fill=NA, color="blue",size=0.5) +
+  geom_sf(data=calgary_fishnet,color="red",size=0.2) +
+  labs(title="Past Flood in Calgary")+
+  mapTheme
 
 
 ```
+```{Raster Clipping_Calgary}
+library(raster)
+library(rgdal)
+
+dependent <- raster("C:/Users/USER/Desktop/LandUseModeling/Assignment3/calgary_raster/dependent.tif")
+dependent_df <- as.data.frame(dependent, xy = TRUE)
+
+fishnet_shp<- st_read("C:/Users/USER/Desktop/LandUseModeling/Assignment3/Calgary/fishnet_boundary.shp")
+st_geometry_type(fishnet_shp)
+
+calfishnet_shp <- st_zm(fishnet_shp, drop = TRUE)
+
+clipped_depen <- mask(dependent,calfishnet_shp)
+clip_df <-as.data.frame(clipped_depen, xy=TRUE)
+
+ggplot() +
+    geom_raster(data = clip_df , aes(x = x, y = y, fill =dependent)) +
+    geom_sf(data = calgary_fishnet, color = "red", fill = NA) +
+    scale_fill_viridis_c() +
+      coord_sf() +
+    labs(title = "Raster Layer with Fishnet Overlay") +
+  mapTheme
+```
+
+library(raster)
+library(rgdal)
+
+GDALinfo("C:/Users/USER/Desktop/LandUseModeling/Assignment3/calgary_raster/dependent.tif")
+
+inundation_info <- capture.output(
+  GDALinfo("C:/Users/USER/Desktop/LandUseModeling/Assignment3/calgary_raster/dependent.tif")
+)
+inundation_info
+
+
+
+dependent_df <- as.data.frame(dependent, xy = TRUE)
+
+ggplot() +
+    geom_raster(data = dependent_df , aes(x = x, y = y, fill =dependent)) +
+    scale_fill_viridis_c() +
+    coord_quickmap()
+
+
+library(sf)
+
+
+fishnet<- st_read("C:/Users/USER/Desktop/LandUseModeling/Assignment3/Calgary/fishnet_boundary.shp")
+st_geometry_type(fishnet)
+new_fishnet <- st_zm(fishnet, drop = TRUE)
+
+sffishnet <- st_zm(fishnet, drop=TRUE, what="Z")
+
+clipped_raster <- mask(dependent,new_fishnet)
+
+
+clip_df <-as.data.frame(clipped_raster, xy=TRUE)
+
+ggplot() +
+    geom_raster(data = clip_df , aes(x = x, y = y, fill =dependent)) +
+    geom_sf(data = calgary_fishnet, color = "red", fill = NA) +
+    scale_fill_viridis_c() +
+      coord_sf() +
+    labs(title = "Raster Layer with Fishnet Overlay") +
+  mapTheme
+
+dependent <- raster("C:/Users/USER/Desktop/LandUseModeling/Assignment3/calgary_raster/dependent.tif")
+writeRaster(dependent, filename="C://Users//USER//Desktop//LandUseModeling//Assignment3//calgary_raster/dependent.tif", format="GTiff", overwrite=TRUE)
+
+
+
+
+
 
 
 

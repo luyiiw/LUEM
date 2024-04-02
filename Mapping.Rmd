@@ -4,15 +4,6 @@ output: html_document
 date: "2024-04-01"
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
-
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
 
 # Setup
 ```{r setup, warning = FALSE, include=FALSE, message = FALSE}
@@ -66,25 +57,18 @@ plotTheme <- theme(
   axis.ticks=element_blank())
 ```
 
-```{r themes}
+```{r calgary}
 calgary_fishnet<-st_read("https://raw.githubusercontent.com/luyiiw/LUEM/main/Calgary_JSON/Calgary_Fishnet.json")
 calgary_boundary<-st_read("https://raw.githubusercontent.com/luyiiw/LUEM/main/Calgary_JSON/Calgary_Boundary.json")
 
-ggplot() + 
-  geom_sf(data=calgary_boundary,fill=NA, color="blue",size=0.5) +
-  geom_sf(data=calgary_fishnet,color="red",size=0.2) +
-  labs(title="Past Flood in Calgary")+
-  mapTheme
-
-##Design Refinement Later
 ```
 
-```{Raster cleaning for Calgary Dependent}
+```{r Raster cleaning for Calgary Dependent}
 
 library(raster)
 library(rgdal)
 
-#Dependent 
+#Inundation Calgary
 dependent <- raster("C:/Users/USER/Desktop/LandUseModeling/Assignment3/calgary_raster/dependent.tif")
 dependent_df <- as.data.frame(dependent, xy = TRUE)
 
@@ -97,36 +81,49 @@ clipped_depen <- mask(dependent,calfishnet_shp)
 clip_df <-as.data.frame(clipped_depen, xy=TRUE)
 
 ggplot() +
-    geom_raster(data = clip_df , aes(x = x, y = y, fill =dependent)) +
-    geom_sf(data = calgary_fishnet, color = "red", fill = NA) +
-    scale_fill_viridis_c() +
-      coord_sf() +
-    labs(title = "Raster Layer with Fishnet Overlay") +
+  geom_raster(data = clip_df, aes(x = x, y = y, fill = dependent)) +  # Raster layer
+  geom_sf(data = calgary_fishnet, color = "grey", fill = NA) +  # Spatial fishnet overlay
+  scale_fill_continuous(name = "Flood Status", low = "yellow", high = "red",na.value = "transparent",
+                        breaks = c(0, 1), labels = c("Not inundation", "Inundation")) +
+  coord_sf() +  # Explicitly use spatial coordinates
+  labs(title = "Past Flooding in Calgary") +
   mapTheme
 
 
+clip_df$dependent <- factor(clip_df$dependent)
 
-
-
+ggplot() +
+  geom_raster(data = clip_df, aes(x = x, y = y, fill = dependent)) + 
+  geom_sf(data = calgary_fishnet, color = "grey", fill = NA) + 
+  geom_tile() +  # Use geom_tile for raster data
+  scale_fill_manual(values = c("1" = "yellow", "0" = "red"), 
+                    labels = c("1" = "Inundation", "0" = "Not Inundation"), 
+                    name = "Flood Status",
+                     na.value = "transparent") +
+  coord_sf() +  # Explicitly use spatial coordinates
+  labs(title = "Past Flooding in Calgary") +
+  mapTheme
 ##Design Refinement Later
 ```
 
 
-
+# Exploratory Analysis
+```{r independent}
+library(viridis)
+#Flow accumulation
 calgary_fac<-raster("C:/Users/USER/Desktop/LandUseModeling/Assignment3/calgary_raster/Calgary_fac.tif")
-calgary_fac_df <- as.data.frame(dependent, xy = TRUE)
-
 clipped_cal_fac <- mask(calgary_fac,calfishnet_shp)
+
 cal_fac_df <-as.data.frame(clipped_cal_fac, xy=TRUE)
 
 ggplot() +
     geom_raster(data = cal_fac_df , aes(x = x, y = y, fill =Calgary_fac)) +
-    geom_sf(data = calgary_fishnet, color = "red", fill = NA) +
-    scale_fill_viridis_c() +
-      coord_sf() +
-    labs(title = "Raster Layer with Fishnet Overlay") +
+    geom_sf(data = calgary_fishnet, color = "grey", fill = NA) +
+ scale_fill_viridis_c(name = "Flow Accumulation", option = "inferno", na.value = "transparent") +
+  coord_sf() +
+  labs(title = "Past Flooding in Calgary") +
   mapTheme
-  
+
   
 ##permeability  
 calgary_perme<-raster("C:/Users/USER/Desktop/LandUseModeling/Assignment3/calgary_raster/calgary_perme.tif")
@@ -189,7 +186,7 @@ ggplot() +
     labs(title = "Raster Layer with Fishnet Overlay") +
   mapTheme
   
-  
+```  
 ##Predicted Variable
 
 

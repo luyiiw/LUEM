@@ -129,7 +129,7 @@ rm(inundation, elevation, flow_acc, land_use, slope, water_body)
 
 ## Plotting Variables
 ```{r}
-# Combining the tables (think of another way to do this) consider merge?
+# Combining the tables 
 flood_comb <- flood %>%
   inner_join(elev_comb, by = "OBJECTID") %>%
   inner_join(slope_comb, by = "OBJECTID") %>%
@@ -228,13 +228,16 @@ caret::confusionMatrix(reference = as.factor(testProbs$obs),
                        positive = "1")
 ```
 
-Predicted = 0, Observed = 0 —> True Negative (No flood correctly predicted 128)
+Predicted = 0, Observed = 0 —> True Negative (No flood correctly predicted 130)
 
-Predicted = 1, Observed = 1 —> True Positive (Floods correctly predicted 42)
+Predicted = 1, Observed = 1 —> True Positive (Floods correctly predicted 40)
 
-Predicted = 1, Observed = 0 —> False Positive (Incorrectly predicted flood when there was no flood 13)
+Predicted = 1, Observed = 0 —> False Positive (Incorrectly predicted flood when there was no flood 23)
 
-Predicted = 0, Observed = 1 —> False Negative (Incorrectly predicted no flood when there was a flood 20)
+Predicted = 0, Observed = 1 —> False Negative (Incorrectly predicted no flood when there was a flood 10)
+
+Accuracy: 84%
+Kappa: 0.60
 
 
 ## ROC Curve
@@ -253,6 +256,8 @@ ggplot(testProbs, aes(d = obs, m = pred)) +
 #area under the curve
 auc(testProbs$obs, testProbs$pred)
 ```
+Area under the curve: 0.85
+
 
 ## Cross-validation
 ```{r}
@@ -267,17 +272,26 @@ cvFit <- train(as.factor(flood) ~ .,  data = model_data %>%
                trControl = ctrl)
 
 cvFit
+
 ggplot(as.data.frame(cvFit$resample), aes(Accuracy)) + 
   geom_histogram() +
   scale_x_continuous(limits = c(0, 1)) +
   labs(x="Accuracy",
        y="Count")+
   plotTheme
+```
+Generalized Linear Model
+Accuracy: 86%
+Kappa: 0.63
 
-
+```{r}
 ###Refine here by yujin
 allPredictions <- 
   predict(cvFit, flood, type="prob")[,2]
+
+### should this be model_data instead?
+allPredictions <- 
+  predict(cvFit, model_data, type="prob")[,2]
   
 finalflood <- 
   cbind(flood,allPredictions) %>%

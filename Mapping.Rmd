@@ -107,70 +107,80 @@ ggplot() +
 ```
 
 
-# Exploratory Analysis
-```{r independent}
+# Exploratory Analysis_Calgary
+```{r independent_flowaccumulation}
 library(viridis)
 #Flow accumulation
 calgary_fac<-raster("C:/Users/USER/Desktop/LandUseModeling/Assignment3/calgary_raster/Calgary_fac.tif")
 clipped_cal_fac <- mask(calgary_fac,calfishnet_shp)
 
 cal_fac_df <-as.data.frame(clipped_cal_fac, xy=TRUE)
-
+library(viridis) 
 ggplot() +
     geom_raster(data = cal_fac_df , aes(x = x, y = y, fill =Calgary_fac)) +
-    geom_sf(data = calgary_fishnet, color = "grey", fill = NA) +
- scale_fill_viridis_c(name = "Flow Accumulation", option = "inferno", na.value = "transparent") +
+ scale_fill_viridis_c(name = "Flow Accumulation", option = "inferno", na.value = "transparent",
+  limits = c(min(cal_fac_df$Calgary_fac, na.rm = TRUE), max(cal_fac_df$Calgary_fac, na.rm = TRUE) *1.01))+
   coord_sf() +
-  labs(title = "Past Flooding in Calgary") +
+  labs(title = "Flood Accumulation in Calgary, Canada") +
   mapTheme
-
-  
+```
+```{r independent_permeability}  
 ##permeability  
 calgary_perme<-raster("C:/Users/USER/Desktop/LandUseModeling/Assignment3/calgary_raster/calgary_perme.tif")
-calgary_perme_df <- as.data.frame(calgary_perme, xy = TRUE)
 
 clipped_cal_perme <- mask(calgary_perme,calfishnet_shp)
 cal_perme_df <-as.data.frame(clipped_cal_perme, xy=TRUE)
 
-ggplot() +
-    geom_raster(data = cal_perme_df , aes(x = x, y = y, fill =calgary_perme)) +
-    geom_sf(data = calgary_fishnet, color = "red", fill = NA) +
-    scale_fill_viridis_c() +
-      coord_sf() +
-    labs(title = "Raster Layer with Fishnet Overlay") +
-  mapTheme
-   
-  
-##water
-calgary_water<-raster("C:/Users/USER/Desktop/LandUseModeling/Assignment3/calgary_raster/calgary_water.tif")
+cal_perme_df$calgary_perme<-factor(cal_perme_df$calgary_perme)
 
+ggplot() +
+  geom_raster(data = cal_perme_df, aes(x = x, y = y, fill = calgary_perme)) + 
+  geom_tile() +  # Use geom_tile for raster data
+  scale_fill_manual(values = c("1" = "#D3D3D3", "0" = "#00008B"), 
+                    labels = c("1" = "Impermeable", "0" = "Permeable"), 
+                    name = "Permeability Status",
+                     na.value = "transparent") +
+  coord_sf() +  # Explicitly use spatial coordinates
+  labs(title = "Permeability by Land Cover in Calgary,Canada") +
+  mapTheme
+```   
+```{r independent_Water}  
+##Distance from water Body
+calgary_water<-raster("C:/Users/USER/Desktop/LandUseModeling/Assignment3/calgary_raster/calgary_water.tif")
 clipped_cal_water <- mask(calgary_water,calfishnet_shp)
 cal_water_df <-as.data.frame(clipped_cal_water, xy=TRUE)
 
+
 ggplot() +
-    geom_raster(data = cal_water_df , aes(x = x, y = y, fill =calgary_water)) +
-    geom_sf(data = calgary_fishnet, color = "red", fill = NA) +
-    scale_fill_viridis_c() +
-      coord_sf() +
-    labs(title = "Raster Layer with Fishnet Overlay") +
+  geom_raster(data = cal_water_df, aes(x = x, y = y, fill = calgary_water)) +
+  scale_fill_gradient(name = "Euclidean Distance",
+                      low = "lightblue", high = "darkblue",
+                      na.value = "transparent",
+                      limits = c(NA, 4000)) +  # Explicitly set the upper limit to 4000
+  coord_sf() +
+  labs(title = "Distance from Water Body in Calgary, Canada") +
   mapTheme
-
-
+```   
+```{r independent_Slope}  
 ##slope
 
 calgary_slope<-raster("C:/Users/USER/Desktop/LandUseModeling/Assignment3/calgary_raster/calgary_slope.tif")
-
 clipped_cal_slope <- mask(calgary_slope,calfishnet_shp)
 cal_slope_df <-as.data.frame(clipped_cal_slope, xy=TRUE)
 
+
 ggplot() +
     geom_raster(data = cal_slope_df , aes(x = x, y = y, fill =calgary_slope)) +
-    geom_sf(data = calgary_fishnet, color = "red", fill = NA) +
-    scale_fill_viridis_c() +
-      coord_sf() +
-    labs(title = "Raster Layer with Fishnet Overlay") +
+    scale_fill_gradient(name = "Slope",
+                      low = "#FDE6CF", high = "#CC2D20",
+                      na.value = "transparent",
+                      limits = c(NA, 28)) +
+  coord_sf() +
+      labs(title = "Slope in Calgary, Canada") +
   mapTheme
 
+```   
+```{r independent_Elevation}  
 ##Elevation
 
 calgary_dem<-raster("C:/Users/USER/Desktop/LandUseModeling/Assignment3/calgary_raster/calgary_dem.tif")
@@ -178,20 +188,33 @@ calgary_dem<-raster("C:/Users/USER/Desktop/LandUseModeling/Assignment3/calgary_r
 clipped_cal_dem <- mask(calgary_dem,calfishnet_shp)
 cal_dem_df <-as.data.frame(clipped_cal_dem, xy=TRUE)
 
+lowest_value <- 970
+highest_value <- 1290
+
 ggplot() +
-    geom_raster(data = cal_dem_df, aes(x = x, y = y, fill =calgary_dem)) +
-    geom_sf(data = calgary_fishnet, color = "red", fill = NA) +
-    scale_fill_viridis_c() +
-      coord_sf() +
-    labs(title = "Raster Layer with Fishnet Overlay") +
-  mapTheme
-  
+  geom_raster(data = cal_dem_df, aes(x = x, y = y, fill = calgary_dem)) +
+  scale_fill_viridis_c(name = "Elevation (m)",
+                       na.value = "transparent",
+                       limits = c(lowest_value, highest_value),  # Set explicit limits to include your specific range
+                       breaks = c(lowest_value, (lowest_value+highest_value)/2, highest_value),  # Include mid-point for clarity
+                       labels = c(as.character(lowest_value), as.character((lowest_value+highest_value)/2), as.character(highest_value))) +  # Custom labels for the breaks
+  coord_sf() +
+  labs(title = "Elevation in Calgary, Canada") +
+mapTheme
+
+
+ggplot() +
+  geom_raster(data = cal_dem_df, aes(x = x, y = y, fill = calgary_dem)) +  # Visualize DEM data
+  geom_sf(data = calgary_fishnet, color = "grey", fill = NA) +  # Add fishnet overlay without fill
+    scale_fill_viridis_c(name = "Elevation (m)", na.value = "transparent")+  # Apply viridis color scale to DEM
+  coord_sf() +  # Use spatial coordinates
+  labs(title = "Elevation in Calgary, Canada") +  # Title for the plot
+   mapTheme
+
 ```  
-##Predicted Variable
+# Exploratory Analysis_Denver
+```{r cleaning for Denver Fishnet}
 
-
-#Denver
-##Denver Fishnet
 denver_fishnet<-st_read("https://raw.githubusercontent.com/luyiiw/LUEM/main/Denver_JSON/denver_fishnet.json")
 denver_boundary<-st_read("https://raw.githubusercontent.com/luyiiw/LUEM/main/Denver_JSON/denver_boundary.json")
 
@@ -201,58 +224,68 @@ ggplot() +
   labs(title="Denver Fishnet")+
   mapTheme
 
-##Design Refinement Later
-
 ##cleaning Denver Boundary
 fishnet_shp_den<- st_read("C:/Users/USER/Desktop/LandUseModeling/Assignment3/Denver/denver_boundary.shp")
 st_geometry_type(fishnet_shp_den)
 
 denfishnet_shp <- st_zm(fishnet_shp_den, drop = TRUE)
+```  
 
-
+```{r independent_flowaccumulation}
 #Denver Fac
 den_fac<-raster("C:/Users/USER/Desktop/LandUseModeling/Assignment3/denver_rast/den_fac.tif")
 clipped_den_fac <- mask(den_fac,denfishnet_shp )
 den_fac_df <-as.data.frame(clipped_den_fac , xy=TRUE)
 
+
+
 ggplot() +
-    geom_raster(data = den_fac_df  , aes(x = x, y = y, fill =den_fac)) +
-    geom_sf(data = denver_fishnet, color = "red", fill = NA) +
-    scale_fill_viridis_c() +
-      coord_sf() +
-    labs(title = "Raster Layer with Fishnet Overlay") +
+    geom_raster(data = den_fac_df , aes(x = x, y = y, fill =den_fac)) +
+ scale_fill_viridis_c(name = "Flow Accumulation", option = "inferno", na.value = "transparent",
+  limits = c(min(den_fac_df$den_fac, na.rm = TRUE), max(den_fac_df$den_fac, na.rm = TRUE) *1.01))+
+  coord_sf() +
+  labs(title = "Flood Accumulation in Denver, Colorado") +
   mapTheme
-  
-  
+
+```    
+```{r independent_permeability}   
 ##permeability  
 den_perme<-raster("C:/Users/USER/Desktop/LandUseModeling/Assignment3/denver_rast/den_perme.tif")
 clipped_den_perme <- mask(den_perme,denfishnet_shp)
 den_perme_df <-as.data.frame(clipped_den_perme, xy=TRUE)
 
+den_perme_df$den_perme<-factor(den_perme_df$den_perme)
+
 ggplot() +
-    geom_raster(data = den_perme_df , aes(x = x, y = y, fill =den_perme)) +
-    geom_sf(data = denver_fishnet, color = "red", fill = NA) +
-    scale_fill_viridis_c() +
-      coord_sf() +
-    labs(title = "Raster Layer with Fishnet Overlay") +
+  geom_raster(data = den_perme_df, aes(x = x, y = y, fill = den_perme)) + 
+  geom_tile() +  # Use geom_tile for raster data
+  scale_fill_manual(values = c("1" = "#D3D3D3", "0" = "#00008B"), 
+                    labels = c("1" = "Impermeable", "0" = "Permeable"), 
+                    name = "Permeability Status",
+                     na.value = "transparent") +
+  coord_sf() +  # Explicitly use spatial coordinates
+  labs(title = "Permeability by Land Cover in Denver, Colorado") +
   mapTheme
-   
-  
-##water
+```    
+```{r independent_Water}  
+##Distance from water Body
 den_water<-raster("C:/Users/USER/Desktop/LandUseModeling/Assignment3/denver_rast/den_water.tif")
 
 clipped_den_water <- mask(den_water,denfishnet_shp)
 den_water_df <-as.data.frame(clipped_den_water, xy=TRUE)
 
+
 ggplot() +
-    geom_raster(data = den_water_df , aes(x = x, y = y, fill =den_water)) +
-    geom_sf(data = denver_fishnet, color = "red", fill = NA) +
-    scale_fill_viridis_c() +
-      coord_sf() +
-    labs(title = "Raster Layer with Fishnet Overlay") +
+  geom_raster(data = den_water_df , aes(x = x, y = y, fill = den_water)) +
+  scale_fill_gradient(name = "Euclidean Distance",
+                      low = "lightblue", high = "darkblue",
+                      na.value = "transparent",
+                      limits = c(NA, 5000)) +  # Explicitly set the upper limit to 4000
+  coord_sf() +
+  labs(title = "Distance from Water Body in Denver, Colorado") +
   mapTheme
-
-
+```
+```{r independent_Slope}  
 ##slope
 
 denver_slope<-raster("C:/Users/USER/Desktop/LandUseModeling/Assignment3/denver_rast/den_slope.tif")
@@ -261,13 +294,17 @@ clipped_den_slope <- mask(denver_slope,denfishnet_shp)
 den_slope_df <-as.data.frame(clipped_den_slope, xy=TRUE)
 
 ggplot() +
-    geom_raster(data = den_slope_df, aes(x = x, y = y, fill =den_slope)) +
-    geom_sf(data = denver_fishnet, color = "red", fill = NA) +
-    scale_fill_viridis_c() +
-      coord_sf() +
-    labs(title = "Raster Layer with Fishnet Overlay") +
+    geom_raster(data = den_slope_df , aes(x = x, y = y, fill =den_slope)) +
+    scale_fill_gradient(name = "Slope",
+                      low = "#FDE6CF", high = "#CC2D20",
+                      na.value = "transparent",
+                      limits = c(NA, 45)) +
+  coord_sf() +
+      labs(title = "Slope in Denver, Colorado") +
   mapTheme
 
+``` 
+```{r independent_Elevation}
 ##Elevation
 
 den_dem<-raster("C:/Users/USER/Desktop/LandUseModeling/Assignment3/denver_rast/den_dem.tif")
@@ -275,15 +312,23 @@ den_dem<-raster("C:/Users/USER/Desktop/LandUseModeling/Assignment3/denver_rast/d
 clipped_den_dem <- mask(den_dem,denfishnet_shp)
 den_dem_df <-as.data.frame(clipped_den_dem , xy=TRUE)
 
-ggplot() +
-    geom_raster(data = den_dem_df , aes(x = x, y = y, fill =den_dem)) +
-    geom_sf(data = denver_fishnet, color = "red", fill = NA) +
-    scale_fill_viridis_c() +
-      coord_sf() +
-    labs(title = "Raster Layer with Fishnet Overlay") +
-  mapTheme
-  
+lowest_value_den <- 1551
+highest_value_den <- 1754
 
+ggplot() +
+  geom_raster(data = den_dem_df, aes(x = x, y = y, fill = den_dem)) +
+  geom_sf(data = denver_fishnet, color = "grey", fill = NA) +
+  scale_fill_viridis_c(name = "Elevation (m)",
+                       na.value = "transparent",
+                       limits = c(lowest_value_den, highest_value_den),  # Set explicit limits to include your specific range
+                       breaks = c(lowest_value_den, (lowest_value_den+highest_value_den)/2, highest_value_den),  # Include mid-point for clarity
+                       labels = c(as.character(lowest_value_den), as.character((lowest_value_den+highest_value_den)/2), as.character(highest_value_den))) +  # Custom labels for the breaks
+  coord_sf() +
+  labs(title = "Elevation in Denver, Colorado") +
+mapTheme
+
+
+``` 
 
 calgary_fishnet01<-calgary_fishnet%>%mutate(calgary_fishnet$)
 
